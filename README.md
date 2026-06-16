@@ -27,7 +27,9 @@ The video processing pipeline involves capturing camera frames natively in Andro
 - Once per second, the Android native view manager dispatches an `onFPSUpdate` event back to the React Native component.
 - `App.tsx` catches this event and updates the `fps` state, reflecting the rendering speed directly in the green badge UI on the screen.
 
-## Controls
-The React Native UI provides control buttons:
+## Controls & Features
+The React Native UI provides several control mechanisms and features:
 - **Start / Stop**: Toggles the Android native `cameraView` visibility and streaming using the `isActive` prop.
 - **Effect ON / Effect OFF**: Changes the `effectEnabled` prop. When OFF, the Java code skips the JNI `processCanny` method and returns the raw RGBA frames, resulting in normal color playback. When ON, it passes the frames to C++ for the OpenCV effect.
+- **Swap Camera**: Swaps between the front and back lens via the `cameraType` prop, dynamically destroying and re-initializing the underlying native camera view.
+- **Permission Handling & Settings Redirect**: Gracefully handles permissions. If the user permanently denies camera access, the UI adapts to display a direct redirect button utilizing `Linking.openSettings()` to open device application settings.
