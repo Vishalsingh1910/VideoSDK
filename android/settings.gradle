@@ -3,4 +3,7 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'VideoSDK'
 include ':app'
+include ':opencv-sdk'
+include ':videosdk-native'
+project(':opencv-sdk').projectDir = new File(rootProject.projectDir, 'opencv-sdk/sdk')
 includeBuild('../node_modules/@react-native/gradle-plugin')

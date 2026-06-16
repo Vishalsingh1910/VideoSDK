@@ -1,40 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, PermissionsAndroid, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, useCameraDevice, useCameraPermission, useFrameOutput } from 'react-native-vision-camera';
+import { OpenCVCameraView } from './OpenCVCameraView';
 
 export default function App() {
-  const { hasPermission, requestPermission } = useCameraPermission();
-  const device = useCameraDevice('back');
   const [status, setStatus] = useState<'loading' | 'requesting' | 'granted' | 'denied'>('loading');
 
   const [isActive, setIsActive] = useState(true);
   const [effectEnabled, setEffectEnabled] = useState(true);
+  const [cameraType, setCameraType] = useState<'front' | 'back'>('back');
+  const [fps, setFps] = useState(0);
 
-  const frameOutput = useFrameOutput({
-    onFrame: (frame) => {
-      'worklet';
-      console.log(frame.width);
-      frame.dispose();
-    }
-  });
 
   useEffect(() => {
-    // Check initial permission state
-    if (hasPermission) {
-      setStatus('granted');
+    checkPermission();
+  }, []);
+
+  const checkPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.CAMERA);
+      if (granted) {
+        setStatus('granted');
+      } else {
+        setStatus('requesting');
+      }
     } else {
-      setStatus('requesting');
+      setStatus('granted');
     }
-  }, [hasPermission]);
+  };
 
   const handleRequestPermission = async () => {
     setStatus('loading');
-    const granted = await requestPermission();
-    if (granted) {
-      setStatus('granted');
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          setStatus('granted');
+        } else {
+          setStatus('denied');
+        }
+      } catch (err) {
+        console.warn(err);
+        setStatus('denied');
+      }
     } else {
-      setStatus('denied');
+      setStatus('granted');
     }
   };
 
@@ -68,55 +78,59 @@ export default function App() {
         <Text style={styles.errorText}>
           You have denied camera permissions. Please go to your settings to enable them to use the camera.
         </Text>
+        <TouchableOpacity style={styles.button} onPress={() => Linking.openSettings()}>
+          <Text style={styles.buttonText}>Open Settings</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   if (status === 'granted') {
-    if (device == null) {
-      return (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>No back camera found on this device.</Text>
-        </View>
-      );
-    }
-
     return (
       <View style={styles.container}>
-        <Camera
+        <OpenCVCameraView
           style={StyleSheet.absoluteFill}
-          device={device}
           isActive={isActive}
-          outputs={[frameOutput]}
+          effectEnabled={effectEnabled}
+          cameraType={cameraType}
+          onFPSUpdate={(e) => setFps(e.nativeEvent.fps)}
         />
         <SafeAreaView style={styles.overlay}>
           <View style={styles.topBar}>
-            <Text style={styles.fpsText}>FPS: 0</Text>
+            <Text style={styles.fpsText}>FPS: {fps}</Text>
           </View>
           <View style={styles.bottomBar}>
             <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={[styles.controlButton, isActive ? styles.activeButton : null]} 
+              <TouchableOpacity
+                style={styles.controlButton}
+                onPress={() => setCameraType(prev => prev === 'back' ? 'front' : 'back')}
+              >
+                <Text style={styles.controlButtonText}>Swap Camera</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.controlButton, isActive ? styles.activeButton : null]}
                 onPress={() => setIsActive(true)}
               >
                 <Text style={styles.controlButtonText}>Start</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.controlButton, !isActive ? styles.activeButton : null]} 
+              <TouchableOpacity
+                style={[styles.controlButton, !isActive ? styles.activeButton : null]}
                 onPress={() => setIsActive(false)}
               >
                 <Text style={styles.controlButtonText}>Stop</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={[styles.controlButton, effectEnabled ? styles.activeButton : null]} 
+              <TouchableOpacity
+                style={[styles.controlButton, effectEnabled ? styles.activeButton : null]}
                 onPress={() => setEffectEnabled(true)}
               >
                 <Text style={styles.controlButtonText}>Effect ON</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.controlButton, !effectEnabled ? styles.activeButton : null]} 
+              <TouchableOpacity
+                style={[styles.controlButton, !effectEnabled ? styles.activeButton : null]}
                 onPress={() => setEffectEnabled(false)}
               >
                 <Text style={styles.controlButtonText}>Effect OFF</Text>

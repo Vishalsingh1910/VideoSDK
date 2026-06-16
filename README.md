@@ -1,97 +1,33 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# VideoSDK React Native OpenCV Integration
 
-# Getting Started
+This project is a React Native application that captures real-time video, applies native image processing algorithms (Canny Edge Detection and Grayscale) using C++ and OpenCV, and renders the processed video in the UI.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Processing Pipeline
 
-## Step 1: Start Metro
+The video processing pipeline involves capturing camera frames natively in Android, passing them via Java Native Interface (JNI) to C++, processing the frames using OpenCV, and rendering them back. The app calculates real-time frames per second (FPS) and sends them to React Native to measure rendering smoothness.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### 1. Camera Capture (React Native / Java)
+- The React Native code `App.tsx` handles checking for, and requesting, camera permissions.
+- Once granted, the `OpenCVCameraView` component is mounted.
+- On the Android side, `OpenCVCameraViewManager.java` manages the camera view using `JavaCamera2View` (provided by OpenCV).
+- `JavaCamera2View` continuously captures frames from the camera using the native Android Camera2 API and triggers the `onCameraFrame` callback for every available frame.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### 2. Native Processing (C++ & OpenCV)
+- Inside `onCameraFrame` in `OpenCVCameraViewManager.java`, the incoming frame is provided as a `Mat` (Matrix) object.
+- If the effect is toggled "ON", the Java code invokes the native C++ method `processCanny`, passing the memory address of the raw RGBA `Mat`.
+- In `native-lib.cpp`, the C++ code performs the following steps on the `Mat` pointer:
+  1. **Grayscale Conversion**: Converts the frame from RGBA to Grayscale (`cv::COLOR_RGBA2GRAY`).
+  2. **Gaussian Blur**: Applies a 5x5 Gaussian Blur to reduce noise and soften the image.
+  3. **Canny Edge Detection**: Runs the Canny Edge detector algorithm to highlight structural outlines.
+  4. **RGBA Conversion**: Converts the processed 1-channel Grayscale output back to 4-channel RGBA (`cv::COLOR_GRAY2RGBA`) so the Android `JavaCamera2View` can correctly render it to the screen.
 
-```sh
-# Using npm
-npm start
+### 3. Rendering and UI (React Native)
+- After the C++ native method finishes modifying the `Mat` in place, Java receives the processed `Mat` and returns it to `JavaCamera2View` to be rendered onto the screen.
+- Simultaneously, `OpenCVCameraViewManager.java` measures the time difference between frames and calculates the Frames Per Second (FPS).
+- Once per second, the Android native view manager dispatches an `onFPSUpdate` event back to the React Native component.
+- `App.tsx` catches this event and updates the `fps` state, reflecting the rendering speed directly in the green badge UI on the screen.
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Controls
+The React Native UI provides control buttons:
+- **Start / Stop**: Toggles the Android native `cameraView` visibility and streaming using the `isActive` prop.
+- **Effect ON / Effect OFF**: Changes the `effectEnabled` prop. When OFF, the Java code skips the JNI `processCanny` method and returns the raw RGBA frames, resulting in normal color playback. When ON, it passes the frames to C++ for the OpenCV effect.
