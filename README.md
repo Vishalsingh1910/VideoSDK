@@ -1,6 +1,7 @@
 # 📸 VideoSDK: React Native + OpenCV
 
-> *Hi, I'm **Vishal Singh**! Welcome to my open-source showcase. I love pushing the boundaries of mobile development, and here I'm demonstrating how to build a high-performance, real-time image processing pipeline bridging React Native, C++, and OpenCV.*
+> *Hi, I'm **Vishal Singh**! This project was undertaken to learn more about React Native + native integrations. The total time spent on the project was less than 7 hours, and it delivered the best outcome possible within that timeframe. It also helped enhance my React Native knowledge through the use of AI tools and OpenCV integration.
+*
 
 This project captures real-time video natively on **Android & iOS**, processes it using **OpenCV (C++ Canny Edge Detection)**, and renders it smoothly at high FPS back into React Native.
 
