@@ -1,35 +1,30 @@
-# VideoSDK React Native OpenCV Integration
+# 📸 VideoSDK: React Native + OpenCV
 
-This project is a React Native application that captures real-time video, applies native image processing algorithms (Canny Edge Detection and Grayscale) using C++ and OpenCV, and renders the processed video in the UI.
+> *Hi, I'm **Vishal Singh**! Welcome to my open-source showcase. I love pushing the boundaries of mobile development, and here I'm demonstrating how to build a high-performance, real-time image processing pipeline bridging React Native, C++, and OpenCV.*
 
-## Processing Pipeline
+This project captures real-time video natively on **Android & iOS**, processes it using **OpenCV (C++ Canny Edge Detection)**, and renders it smoothly at high FPS back into React Native.
 
-The video processing pipeline involves capturing camera frames natively in Android, passing them via Java Native Interface (JNI) to C++, processing the frames using OpenCV, and rendering them back. The app calculates real-time frames per second (FPS) and sends them to React Native to measure rendering smoothness.
+🔗 **[Download Android APK](https://drive.google.com/file/d/1t8vIS4GmqA2g37en4y-s2YaynitFFv09/view?usp=sharing)**  
+🎥 **[Watch Video Demo](https://drive.google.com/file/d/1Tt5yw6n0VWv8mRSQfObfte-QTT1Kmxf2/view?usp=sharing)**
 
-### 1. Camera Capture (React Native / Java)
-- The React Native code `App.tsx` handles checking for, and requesting, camera permissions.
-- Once granted, the `OpenCVCameraView` component is mounted.
-- On the Android side, `OpenCVCameraViewManager.java` manages the camera view using `JavaCamera2View` (provided by OpenCV).
-- `JavaCamera2View` continuously captures frames from the camera using the native Android Camera2 API and triggers the `onCameraFrame` callback for every available frame.
+## ✨ Features
+- 🚀 **Real-time Native Processing:** C++ powered OpenCV integration (via JNI for Android, Objective-C++ for iOS).
+- ⚡️ **Live FPS Tracking:** Native performance measurement rendered directly in the UI.
+- 🎨 **Live Vision Effects:** Toggle Canny Edge Detection and Grayscale processing on the fly.
+- 🔄 **Camera Controls:** Seamless front/back camera swapping and smart permission handling.
 
-### 2. Native Processing (C++ & OpenCV)
-- Inside `onCameraFrame` in `OpenCVCameraViewManager.java`, the incoming frame is provided as a `Mat` (Matrix) object.
-- If the effect is toggled "ON", the Java code invokes the native C++ method `processCanny`, passing the memory address of the raw RGBA `Mat`.
-- In `native-lib.cpp`, the C++ code performs the following steps on the `Mat` pointer:
-  1. **Grayscale Conversion**: Converts the frame from RGBA to Grayscale (`cv::COLOR_RGBA2GRAY`).
-  2. **Gaussian Blur**: Applies a 5x5 Gaussian Blur to reduce noise and soften the image.
-  3. **Canny Edge Detection**: Runs the Canny Edge detector algorithm to highlight structural outlines.
-  4. **RGBA Conversion**: Converts the processed 1-channel Grayscale output back to 4-channel RGBA (`cv::COLOR_GRAY2RGBA`) so the Android `JavaCamera2View` can correctly render it to the screen.
+## 🛠️ Setup & OpenCV SDK Installation
+To build and run this project, you'll need the OpenCV SDK for your respective platforms.
 
-### 3. Rendering and UI (React Native)
-- After the C++ native method finishes modifying the `Mat` in place, Java receives the processed `Mat` and returns it to `JavaCamera2View` to be rendered onto the screen.
-- Simultaneously, `OpenCVCameraViewManager.java` measures the time difference between frames and calculates the Frames Per Second (FPS).
-- Once per second, the Android native view manager dispatches an `onFPSUpdate` event back to the React Native component.
-- `App.tsx` catches this event and updates the `fps` state, reflecting the rendering speed directly in the green badge UI on the screen.
+### 🤖 For Android:
+1. Download the [OpenCV Android SDK](https://opencv.org/releases/) (e.g., version 4.x).
+2. Extract the archive and add the OpenCV module to your `android/opencv-sdk/` directory.
 
-## Controls & Features
-The React Native UI provides several control mechanisms and features:
-- **Start / Stop**: Toggles the Android native `cameraView` visibility and streaming using the `isActive` prop.
-- **Effect ON / Effect OFF**: Changes the `effectEnabled` prop. When OFF, the Java code skips the JNI `processCanny` method and returns the raw RGBA frames, resulting in normal color playback. When ON, it passes the frames to C++ for the OpenCV effect.
-- **Swap Camera**: Swaps between the front and back lens via the `cameraType` prop, dynamically destroying and re-initializing the underlying native camera view.
-- **Permission Handling & Settings Redirect**: Gracefully handles permissions. If the user permanently denies camera access, the UI adapts to display a direct redirect button utilizing `Linking.openSettings()` to open device application settings.
+### 🍎 For iOS:
+1. run npm install then run pod install in the ios folder
+
+## 🧠 How It Works (The Pipeline)
+Keep it simple! The app works in 3 core steps:
+1. **Capture:** `JavaCamera2View` (Android) and `CvVideoCamera` (iOS) capture camera frames natively.
+2. **Process:** Frames are passed to C++ where Grayscale, Gaussian Blur, and **Canny Edge Detection** are applied in real-time.
+3. **Render:** The modified frames are returned as RGBA/BGRA and rendered onto the screen, while FPS metrics are dispatched back to the React Native UI (`App.tsx`).
