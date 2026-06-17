@@ -16,6 +16,7 @@ end
 
 target 'VideoSDK' do
   config = use_native_modules!
+  pod 'OpenCV', '~> 4.3'
 
   use_react_native!(
     :path => config[:reactNativePath],

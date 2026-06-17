@@ -25,7 +25,17 @@ export default function App() {
         setStatus('requesting');
       }
     } else {
-      setStatus('granted');
+      const { CameraPermissionModule } = require('react-native').NativeModules;
+      if (CameraPermissionModule) {
+        const status = await CameraPermissionModule.checkPermission();
+        if (status === 'granted') {
+          setStatus('granted');
+        } else {
+          setStatus('requesting');
+        }
+      } else {
+        setStatus('granted');
+      }
     }
   };
 
@@ -44,7 +54,17 @@ export default function App() {
         setStatus('denied');
       }
     } else {
-      setStatus('granted');
+      const { CameraPermissionModule } = require('react-native').NativeModules;
+      if (CameraPermissionModule) {
+        const status = await CameraPermissionModule.requestPermission();
+        if (status === 'granted') {
+          setStatus('granted');
+        } else {
+          setStatus('denied');
+        }
+      } else {
+        setStatus('granted');
+      }
     }
   };
 
